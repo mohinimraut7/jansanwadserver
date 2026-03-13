@@ -14,6 +14,7 @@ const citizenAppointmentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref:  "Citizen",
     },
+
     
 
     // ── Personal info (snapshot at booking time) ──────────────────────────
