@@ -36,6 +36,12 @@ const mongoose = require("mongoose");
 
 const citizenSchema = new mongoose.Schema(
   {
+    username: {
+  type: String,
+  unique: true,
+  trim: true,
+  default: "",
+},
     fullName: {
       type:    String,
       trim:    true,

@@ -16,6 +16,11 @@ const replySchema = new mongoose.Schema(
 
 const inwardApplicationSchema = new mongoose.Schema(
   {
+    tokenNo: {
+  type:   String,
+  unique: true,
+  default: "",
+},
     inwardNo: {
       type: String,
       required: true,
@@ -32,6 +37,7 @@ const inwardApplicationSchema = new mongoose.Schema(
     mobile:   String,
     email:    String,
     wardNo:   String,
+     ward:   String,
     address:  String,
     pincode:  String,
     category: String,

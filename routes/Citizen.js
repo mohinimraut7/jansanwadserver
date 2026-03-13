@@ -28,8 +28,8 @@ const upload = multer({
 });
 
 // ── Citizen Auth ──────────────────────────────────────────────────────────────
-router.post("/register", registerCitizen);
-router.post("/login",    loginCitizen);
+router.post("/register",registerCitizen);
+router.post("/login",loginCitizen);
 router.post("/citizenLoginByMobile",    citizenLoginByMobile);
 
 // ── Appointments ──────────────────────────────────────────────────────────────

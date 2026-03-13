@@ -399,11 +399,51 @@ function slotsOverlap(start1, end1, start2, end2) {
 // ══════════════════════════════════════════════════════════════════════════════
 // ✅ REGISTER CITIZEN
 // ══════════════════════════════════════════════════════════════════════════════
+// exports.registerCitizen = async (req, res) => {
+//   try {
+//     let { fullName, mobileNumber, email, password } = req.body;
+
+//     fullName     = fullName?.trim();
+//     mobileNumber = mobileNumber?.trim();
+//     email        = email?.trim().toLowerCase() || "";
+
+//     if (!fullName || !mobileNumber || !password) {
+//       return res.status(400).json({ success: false, message: "सर्व fields required ❌" });
+//     }
+//     if (!/^\d{10}$/.test(mobileNumber)) {
+//       return res.status(400).json({ success: false, message: "Mobile number 10 digits असावा ❌" });
+//     }
+
+//     const existing = await Citizen.findOne({ mobileNumber });
+//     if (existing) {
+//       return res.status(409).json({ success: false, message: "हा mobile number already registered आहे ❌" });
+//     }
+
+//     const hashed  = await bcrypt.hash(password, 10);
+//     const citizen = await Citizen.create({ fullName, mobileNumber, email, password: hashed });
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Registration successful ✅",
+//       citizen: {
+//         _id:          citizen._id,
+//         fullName:     citizen.fullName,
+//         mobileNumber: citizen.mobileNumber,
+//         email:        citizen.email,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Citizen Register Error:", error);
+//     return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
+//   }
+// };
+
 exports.registerCitizen = async (req, res) => {
   try {
-    let { fullName, mobileNumber, email, password } = req.body;
+    let { fullName, userName, mobileNumber, email, password } = req.body; // ✅ userName add केला
 
     fullName     = fullName?.trim();
+    userName     = userName?.trim() || "";               // ✅ trim
     mobileNumber = mobileNumber?.trim();
     email        = email?.trim().toLowerCase() || "";
 
@@ -420,7 +460,13 @@ exports.registerCitizen = async (req, res) => {
     }
 
     const hashed  = await bcrypt.hash(password, 10);
-    const citizen = await Citizen.create({ fullName, mobileNumber, email, password: hashed });
+    const citizen = await Citizen.create({
+      fullName,
+      username: userName, // ✅ frontend userName → backend username
+      mobileNumber,
+      email,
+      password: hashed,
+    });
 
     return res.status(201).json({
       success: true,
@@ -428,6 +474,7 @@ exports.registerCitizen = async (req, res) => {
       citizen: {
         _id:          citizen._id,
         fullName:     citizen.fullName,
+        username:     citizen.username, // ✅ return पण करा
         mobileNumber: citizen.mobileNumber,
         email:        citizen.email,
       },
@@ -441,45 +488,85 @@ exports.registerCitizen = async (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // ✅ LOGIN CITIZEN (password)
 // ══════════════════════════════════════════════════════════════════════════════
+// exports.loginCitizen = async (req, res) => {
+//   try {
+//     let { username, password } = req.body;
+//     mobileNumber = mobileNumber?.trim();
+
+//     if (!mobileNumber || !password) {
+//       return res.status(400).json({ success: false, message: "Mobile number आणि password द्या ❌" });
+//     }
+
+//     const citizen = await Citizen.findOne({ mobileNumber });
+//     if (!citizen) {
+//       return res.status(404).json({ success: false, message: "Account सापडले नाही ❌" });
+//     }
+
+//     const match = await bcrypt.compare(password, citizen.password);
+//     if (!match) {
+//       return res.status(401).json({ success: false, message: "Password चुकीचा आहे ❌" });
+//     }
+
+//     const token = jwt.sign(
+//       { id: citizen._id, mobileNumber: citizen.mobileNumber },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "7d" }
+//     );
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Login successful ✅",
+//       token,
+//       citizen: {
+//         _id:          citizen._id,
+//         fullName:     citizen.fullName,
+//         mobileNumber: citizen.mobileNumber,
+//         email:        citizen.email,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Citizen Login Error:", error);
+//     return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
+//   }
+// };
+
 exports.loginCitizen = async (req, res) => {
   try {
-    let { mobileNumber, password } = req.body;
-    mobileNumber = mobileNumber?.trim();
+    let { username, password } = req.body;
+    username = username?.trim();
 
-    if (!mobileNumber || !password) {
-      return res.status(400).json({ success: false, message: "Mobile number आणि password द्या ❌" });
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: "Username आणि Password required ❌" });
     }
 
-    const citizen = await Citizen.findOne({ mobileNumber });
-    if (!citizen) {
+    // ✅ users collection मध्ये userName ने शोध
+    const user = await Citizen.findOne({ username: username });
+    if (!user) {
       return res.status(404).json({ success: false, message: "Account सापडले नाही ❌" });
     }
 
-    const match = await bcrypt.compare(password, citizen.password);
+    const match = await bcrypt.compare(password, user.password);
     if (!match) {
       return res.status(401).json({ success: false, message: "Password चुकीचा आहे ❌" });
     }
 
     const token = jwt.sign(
-      { id: citizen._id, mobileNumber: citizen.mobileNumber },
+      { id: user._id, userName: user.username },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
     return res.status(200).json({
       success: true,
-      message: "Login successful ✅",
       token,
       citizen: {
-        _id:          citizen._id,
-        fullName:     citizen.fullName,
-        mobileNumber: citizen.mobileNumber,
-        email:        citizen.email,
+        _id:      user._id,
+        fullName: user.fullName,
+        username: user.username,
       },
     });
   } catch (error) {
-    console.error("Citizen Login Error:", error);
-    return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
+    return res.status(500).json({ success: false, message: "Server Error ❌" });
   }
 };
 
@@ -643,13 +730,35 @@ exports.bookAppointment = async (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // ✅ GET MY APPOINTMENTS
 // ══════════════════════════════════════════════════════════════════════════════
+
+// exports.getMyAppointments = async (req, res) => {
+//   try {
+//     const { mobileNumber } = req.query;
+//     // if (!mobileNumber) {
+//     //   return res.status(400).json({ success: false, message: "Mobile number required ❌" });
+//     // }
+//     const appointments = await CitizenAppointment.find({ mobileNumber }).sort({ createdAt: -1 });
+//     return res.status(200).json({ success: true, count: appointments.length, appointments });
+//   } catch (error) {
+//     console.error("Get My Appointments Error:", error);
+//     return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
+//   }
+// };
+
+
 exports.getMyAppointments = async (req, res) => {
   try {
-    const { mobileNumber } = req.query;
-    if (!mobileNumber) {
-      return res.status(400).json({ success: false, message: "Mobile number required ❌" });
+    const { mobileNumber, citizenId } = req.query;
+
+    // ✅ citizenId ने शोध — सर्वात reliable
+    let appointments = [];
+
+    if (citizenId) {
+      appointments = await CitizenAppointment.find({ citizenId }).sort({ createdAt: -1 });
+    } else if (mobileNumber) {
+      appointments = await CitizenAppointment.find({ mobileNumber }).sort({ createdAt: -1 });
     }
-    const appointments = await CitizenAppointment.find({ mobileNumber }).sort({ createdAt: -1 });
+
     return res.status(200).json({ success: true, count: appointments.length, appointments });
   } catch (error) {
     console.error("Get My Appointments Error:", error);

@@ -6,10 +6,80 @@ const InwardApplication = require("../models/InwardApplication");
 // ─────────────────────────────────────────────
 //  ADD INWARD APPLICATION
 // ─────────────────────────────────────────────
+
+const generateToken = async () => {
+  const today = new Date();
+  const day   = String(today.getDate()).padStart(2, "0");
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const year  = today.getFullYear();
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const count = await InwardApplication.countDocuments({
+    createdAt: { $gte: startOfDay }
+  });
+
+  const serial = String(count + 1).padStart(3, "0");
+  return `VVCMC${day}${month}${year}${serial}`;
+};
+
+
+
+
+
+// exports.addInwardApplication = async (req, res) => {
+//   try {
+//     const {
+//       inwardNo, submissionDate, fullName, mobile, email, wardNo,ward,address,
+//       pincode, category, identityType, identityNumber, taluka, district,
+//       subject, description, office, mainDepartment, subDepartment, priority,
+//       followUp, status,
+//       submittedById, submittedByName, submittedByRole, submittedByUserName, submittedByDept,
+//     } = req.body;
+
+//     const existingApplication = await InwardApplication.findOne({ inwardNo });
+//     if (existingApplication) {
+//       return res.status(400).json({ success: false, message: "Inward Number already exists" });
+//     }
+
+//     let tagTo = req.body.tagTo || [];
+//     if (typeof tagTo === "string") tagTo = [tagTo];
+
+//     const documentPath = req.file ? req.file.path : null;
+
+//     const newApplication = new InwardApplication({
+//       inwardNo, submissionDate, fullName, mobile, email, wardNo,ward,address,
+//       pincode, category, identityType, identityNumber, taluka, district,
+//       subject, description, office, mainDepartment, subDepartment, priority,
+//       tagTo, followUp, status, documents: documentPath,
+//       submittedById:       submittedById       || "",
+//       submittedByName:     submittedByName     || "",
+//       submittedByRole:     submittedByRole     || "",
+//       submittedByUserName: submittedByUserName || "",
+//       submittedByDept:     submittedByDept     || "",
+//     });
+
+//     await newApplication.save();
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Inward Application Added Successfully",
+//       data: newApplication,
+//     });
+
+//   } catch (error) {
+//     console.error("Add Inward Error:", error);
+//     res.status(500).json({ success: false, message: "Server Error", error: error.message });
+//   }
+// };
+
+
+
 exports.addInwardApplication = async (req, res) => {
   try {
     const {
-      inwardNo, submissionDate, fullName, mobile, email, wardNo, address,
+      inwardNo, submissionDate, fullName, mobile, email, wardNo, ward, address,
       pincode, category, identityType, identityNumber, taluka, district,
       subject, description, office, mainDepartment, subDepartment, priority,
       followUp, status,
@@ -26,11 +96,15 @@ exports.addInwardApplication = async (req, res) => {
 
     const documentPath = req.file ? req.file.path : null;
 
+    // ✅ Token generate करा
+    const tokenNo = await generateToken();
+
     const newApplication = new InwardApplication({
-      inwardNo, submissionDate, fullName, mobile, email, wardNo, address,
+      inwardNo, submissionDate, fullName, mobile, email, wardNo, ward, address,
       pincode, category, identityType, identityNumber, taluka, district,
       subject, description, office, mainDepartment, subDepartment, priority,
       tagTo, followUp, status, documents: documentPath,
+      tokenNo, // ✅ add केला
       submittedById:       submittedById       || "",
       submittedByName:     submittedByName     || "",
       submittedByRole:     submittedByRole     || "",
@@ -43,6 +117,7 @@ exports.addInwardApplication = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Inward Application Added Successfully",
+      tokenNo, // ✅ frontend ला पाठवा
       data: newApplication,
     });
 
@@ -51,6 +126,7 @@ exports.addInwardApplication = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
+
 
 
 // ─────────────────────────────────────────────
