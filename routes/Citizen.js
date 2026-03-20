@@ -10,7 +10,10 @@ const {
   getAppointmentCard,
   getAllAppointments,
   updateAppointmentStatus,
-  citizenLoginByMobile
+  citizenLoginByMobile,
+  getMicroSlots,
+  getCitizenByUsername,
+  getCitizenById
 } = require("../controllers/Citizen");
 
 // ── Multer config for citizen photos ─────────────────────────────────────────
@@ -40,5 +43,8 @@ router.get("/appointment-card/:id",     getAppointmentCard);
 // ── Admin routes ──────────────────────────────────────────────────────────────
 router.get("/admin/all-appointments",          getAllAppointments);
 router.patch("/admin/update-status/:id",       updateAppointmentStatus);
-
+// routes/availability.js — add:
+router.get("/micro-slots", getMicroSlots);
+router.get("/by-username/:username", getCitizenByUsername);
+router.get("/by-id/:id", getCitizenById);  // ✅ ADD THIS
 module.exports = router;

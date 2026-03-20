@@ -349,13 +349,14 @@ const jwt = require("jsonwebtoken");
 // ✅ REGISTER USER
 exports.registerUser = async (req, res) => {
   try {
-    let { fullName, userName, mobileNumber, email, password } = req.body;
+    let { fullName, userName, mobileNumber, email, password,departmentName} = req.body;
 
     // Trim & normalize
     fullName     = fullName?.trim();
     userName     = userName?.trim().toLowerCase();
     mobileNumber = mobileNumber?.trim();
-    email        = email?.trim().toLowerCase();
+    email = email?.trim().toLowerCase();
+     departmentName = email?.trim().toLowerCase();
 
     // Validation
     if (!fullName || !userName || !mobileNumber || !email || !password) {
@@ -415,6 +416,7 @@ exports.registerUser = async (req, res) => {
       mobileNumber,
       email,
       password,
+      departmentName
     });
 
     return res.status(201).json({
@@ -426,6 +428,7 @@ exports.registerUser = async (req, res) => {
         userName:     newUser.userName,
         mobileNumber: newUser.mobileNumber,
         email:        newUser.email,
+        departmentName:newUser.departmentName
       },
     });
 

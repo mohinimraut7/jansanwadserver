@@ -55,6 +55,10 @@ const citizenAppointmentSchema = new mongoose.Schema(
 
     // ── Admin notes ───────────────────────────────────────────────────────
     adminNote: { type: String, default: "" },
+    // In CitizenAppointment schema, add:
+microStart:  { type: String, default: "" },
+microEnd:    { type: String, default: "" },
+microSlot:   { type: String, default: "" }, // "09:00 - 09:15"
   },
   { timestamps: true }
 );
