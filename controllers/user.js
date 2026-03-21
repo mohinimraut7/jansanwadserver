@@ -356,7 +356,7 @@ exports.registerUser = async (req, res) => {
     userName     = userName?.trim().toLowerCase();
     mobileNumber = mobileNumber?.trim();
     email = email?.trim().toLowerCase();
-     departmentName = email?.trim().toLowerCase();
+    departmentName = departmentName?.trim();  // <-- use departmentName, not email
 
     // Validation
     if (!fullName || !userName || !mobileNumber || !email || !password) {
