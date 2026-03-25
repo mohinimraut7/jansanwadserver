@@ -94,7 +94,12 @@ exports.addInwardApplication = async (req, res) => {
     let tagTo = req.body.tagTo || [];
     if (typeof tagTo === "string") tagTo = [tagTo];
 
-    const documentPath = req.file ? req.file.path : null;
+    // const documentPath = req.file ? req.file.path : null;
+    // const visitorPhotoPath = req.files?.visitorPhoto?.[0]?.path || null;
+
+
+    const documentPath     = req.files?.documents?.[0]?.path    || null;
+const visitorPhotoPath = req.files?.visitorPhoto?.[0]?.path || null;
 
     // ✅ Token generate करा
     const tokenNo = await generateToken();
@@ -104,6 +109,7 @@ exports.addInwardApplication = async (req, res) => {
       pincode, category, identityType, identityNumber, taluka, district,
       subject, description, office, mainDepartment, subDepartment, priority,
       tagTo, followUp, status, documents: documentPath,
+      visitorPhoto: visitorPhotoPath,   // ✅ added
       tokenNo, // ✅ add केला
       submittedById:       submittedById       || "",
       submittedByName:     submittedByName     || "",
@@ -134,44 +140,160 @@ exports.addInwardApplication = async (req, res) => {
 // ─────────────────────────────────────────────
 
 // DB: ["[\"CEO\",\"BDO\"]"] → flat array: ["CEO","BDO"]
-const parseTagTo = (tagTo = []) => {
-  try {
-    const flat = [];
-    for (const item of tagTo) {
-      if (typeof item === "string" && item.trim().startsWith("[")) {
-        const parsed = JSON.parse(item);
-        if (Array.isArray(parsed)) flat.push(...parsed);
-      } else if (item) {
-        flat.push(item);
+// const parseTagTo = (tagTo = []) => {
+//   try {
+//     const flat = [];
+//     for (const item of tagTo) {
+//       if (typeof item === "string" && item.trim().startsWith("[")) {
+//         const parsed = JSON.parse(item);
+//         if (Array.isArray(parsed)) flat.push(...parsed);
+//       } else if (item) {
+//         flat.push(item);
+//       }
+//     }
+//     return flat;
+//   } catch {
+//     return tagTo;
+//   }
+// };
+
+// const isRoleMatch = (userRole = "", tagToList = []) => {
+//   const normalizedUserRole = userRole.toLowerCase().trim();
+//   return tagToList.some((tag) => {
+//     const normalizedTag = tag.toLowerCase().trim();
+//     if (normalizedTag === normalizedUserRole)       return true;
+//     if (normalizedTag.includes(normalizedUserRole)) return true;
+//     if (normalizedUserRole.includes(normalizedTag)) return true;
+//     return false;
+//   });
+// };
+
+
+// // ─────────────────────────────────────────────
+// //  GET ALL APPLICATIONS
+// // ─────────────────────────────────────────────
+// exports.getAllApplications = async (req, res) => {
+//   try {
+//     const { role, userId, userOffice, userDepartmentCategory } = req.query;
+
+//     const fullAccessRoles = ["Super Admin"];
+
+//     if (fullAccessRoles.includes(role)) {
+//       const applications = await InwardApplication.find({}).sort({ createdAt: -1 });
+//       return res.status(200).json({
+//         success: true,
+//         message: "Applications Fetched Successfully",
+//         data: applications,
+//       });
+//     }
+
+//     const allApps = await InwardApplication.find({}).sort({ createdAt: -1 });
+
+//     const filtered = allApps.filter((app) => {
+//       if (userId && app.submittedById === userId) return true;
+
+//       const parsedTagTo  = parseTagTo(app.tagTo);
+//       const roleMatch    = role                   ? isRoleMatch(role, parsedTagTo)                                                             : false;
+//       const officeMatch  = userOffice             ? app.office?.toLowerCase().trim() === userOffice.toLowerCase().trim()                       : false;
+//       const deptCatMatch = userDepartmentCategory ? app.mainDepartment?.toLowerCase().trim() === userDepartmentCategory.toLowerCase().trim()   : false;
+
+//       return roleMatch && officeMatch && deptCatMatch;
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Applications Fetched Successfully",
+//       data: filtered,
+//     });
+
+//   } catch (error) {
+//     console.error("Get All Applications Error:", error);
+//     res.status(500).json({ success: false, message: "Server Error", error: error.message });
+//   }
+// };
+
+
+
+
+
+// ─────────────────────────────────────────────────────────────
+//  Helper: parse tagTo field
+//  tagTo is stored as an array that may contain a JSON-stringified
+//  inner array, e.g.:
+//    ["[\"Special Planning Authority Department HO\",\"Disaster Management Department HO\"]"]
+//  OR a plain flat array:
+//    ["Special Planning Authority Department HO", "Disaster Management Department HO"]
+//  This helper always returns a clean flat string array.
+// ─────────────────────────────────────────────────────────────
+function parseTagTo(tagTo) {
+  if (!Array.isArray(tagTo) || tagTo.length === 0) return [];
+
+  const result = [];
+
+  for (const item of tagTo) {
+    if (typeof item === "string") {
+      const trimmed = item.trim();
+
+      // Looks like a JSON array string → parse it
+      if (trimmed.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((v) => {
+              if (typeof v === "string" && v.trim()) result.push(v.trim());
+            });
+            continue;
+          }
+        } catch (_) {
+          // not valid JSON — fall through and treat as plain string
+        }
       }
+
+      if (trimmed) result.push(trimmed);
     }
-    return flat;
-  } catch {
-    return tagTo;
   }
-};
 
-const isRoleMatch = (userRole = "", tagToList = []) => {
-  const normalizedUserRole = userRole.toLowerCase().trim();
-  return tagToList.some((tag) => {
-    const normalizedTag = tag.toLowerCase().trim();
-    if (normalizedTag === normalizedUserRole)       return true;
-    if (normalizedTag.includes(normalizedUserRole)) return true;
-    if (normalizedUserRole.includes(normalizedTag)) return true;
-    return false;
-  });
-};
+  return result;
+}
 
+// ─────────────────────────────────────────────────────────────
+//  Helper: check if a role keyword exists in the parsed tagTo
+//  (kept exactly as before)
+// ─────────────────────────────────────────────────────────────
+function isRoleMatch(role, parsedTagTo) {
+  if (!role || !Array.isArray(parsedTagTo)) return false;
+  return parsedTagTo.some(
+    (tag) => tag.toLowerCase().trim() === role.toLowerCase().trim()
+  );
+}
 
-// ─────────────────────────────────────────────
-//  GET ALL APPLICATIONS
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  NEW Helper: check if user's departmentName is in tagTo
+//  (case-insensitive)
+// ─────────────────────────────────────────────────────────────
+function isDepartmentTagMatch(userDepartmentName, parsedTagTo) {
+  if (!userDepartmentName || !Array.isArray(parsedTagTo)) return false;
+  const userDeptLower = userDepartmentName.toLowerCase().trim();
+  return parsedTagTo.some(
+    (tag) => tag.toLowerCase().trim() === userDeptLower
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Controller
+// ─────────────────────────────────────────────────────────────
 exports.getAllApplications = async (req, res) => {
   try {
-    const { role, userId, userOffice, userDepartmentCategory } = req.query;
+    const {
+      role,
+      userId,
+      userOffice,
+      userDepartmentCategory,
+      userDepartmentName,      // ← NEW param sent from frontend
+    } = req.query;
 
-    const fullAccessRoles = ["Super Admin", "Guardian Minister"];
-
+    // ── Super Admin: full access (unchanged) ──
+    const fullAccessRoles = ["Super Admin"];
     if (fullAccessRoles.includes(role)) {
       const applications = await InwardApplication.find({}).sort({ createdAt: -1 });
       return res.status(200).json({
@@ -181,17 +303,28 @@ exports.getAllApplications = async (req, res) => {
       });
     }
 
+    // ── All other roles: apply filters ──
     const allApps = await InwardApplication.find({}).sort({ createdAt: -1 });
 
     const filtered = allApps.filter((app) => {
+      // 1. Always show applications submitted by this user
       if (userId && app.submittedById === userId) return true;
 
-      const parsedTagTo  = parseTagTo(app.tagTo);
-      const roleMatch    = role                   ? isRoleMatch(role, parsedTagTo)                                                             : false;
-      const officeMatch  = userOffice             ? app.office?.toLowerCase().trim() === userOffice.toLowerCase().trim()                       : false;
-      const deptCatMatch = userDepartmentCategory ? app.mainDepartment?.toLowerCase().trim() === userDepartmentCategory.toLowerCase().trim()   : false;
+      const parsedTagTo = parseTagTo(app.tagTo);
 
-      return roleMatch && officeMatch && deptCatMatch;
+      // 2. Existing filters (unchanged)
+      const roleMatch    = role                   ? isRoleMatch(role, parsedTagTo)                                                           : false;
+      const officeMatch  = userOffice             ? app.office?.toLowerCase().trim() === userOffice.toLowerCase().trim()                     : false;
+      const deptCatMatch = userDepartmentCategory ? app.mainDepartment?.toLowerCase().trim() === userDepartmentCategory.toLowerCase().trim() : false;
+
+      // 3. NEW: case-insensitive departmentName match against tagTo
+      const deptTagMatch = userDepartmentName
+        ? isDepartmentTagMatch(userDepartmentName, parsedTagTo)
+        : false;
+
+      // Original condition (unchanged): roleMatch && officeMatch && deptCatMatch
+      // Additional condition (NEW):     deptTagMatch (user's dept is tagged)
+      return (roleMatch && officeMatch && deptCatMatch) || deptTagMatch;
     });
 
     res.status(200).json({
@@ -202,9 +335,15 @@ exports.getAllApplications = async (req, res) => {
 
   } catch (error) {
     console.error("Get All Applications Error:", error);
-    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
   }
 };
+
+
 
 
 // ─────────────────────────────────────────────

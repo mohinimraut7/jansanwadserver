@@ -2488,6 +2488,42 @@ exports.getCitizenById = async (req, res) => {
 };
 
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ✅ GET APPOINTMENT BY TOKEN ID
+// ══════════════════════════════════════════════════════════════════════════════
+exports.getDataByTokenId = async (req, res) => {
+  try {
+    const { tokenId } = req.params;
+
+    if (!tokenId) {
+      return res.status(400).json({ success: false, message: "Token ID required ❌" });
+    }
+
+    const appointment = await CitizenAppointment.findOne({ tokenId: tokenId.trim() });
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: "Token ID सापडले नाही ❌" });
+    }
+
+    // ✅ Auto-expire if date passed and still pending
+    const today = new Date().toISOString().split("T")[0];
+    if (appointment.preferredDate < today && appointment.status === "pending") {
+      appointment.status = "expired";
+      await appointment.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      appointment,
+    });
+
+  } catch (error) {
+    console.error("Get Data By Token ID Error:", error);
+    return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
+  }
+};
+
+
 
 
 

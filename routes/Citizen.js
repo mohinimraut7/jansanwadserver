@@ -13,7 +13,8 @@ const {
   citizenLoginByMobile,
   getMicroSlots,
   getCitizenByUsername,
-  getCitizenById
+  getCitizenById,
+  getDataByTokenId
 } = require("../controllers/Citizen");
 
 // ── Multer config for citizen photos ─────────────────────────────────────────
@@ -47,4 +48,6 @@ router.patch("/admin/update-status/:id",       updateAppointmentStatus);
 router.get("/micro-slots", getMicroSlots);
 router.get("/by-username/:username", getCitizenByUsername);
 router.get("/by-id/:id", getCitizenById);  // ✅ ADD THIS
+
+router.get("/appointment/token/:tokenId", getDataByTokenId);
 module.exports = router;

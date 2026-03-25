@@ -78,6 +78,10 @@ const inwardApplicationSchema = new mongoose.Schema(
     documents: {
       type: String, // file path
     },
+      visitorPhoto: {
+      type: String, // file path
+    },
+
 
     // ── Submitted By (authUser) ──
     submittedById:       { type: String, default: "" },
