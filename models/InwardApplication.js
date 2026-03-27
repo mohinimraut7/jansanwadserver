@@ -4,12 +4,13 @@ const mongoose = require("mongoose");
 // ── Reply Schema ──
 const replySchema = new mongoose.Schema(
   {
-    replyMessage: { type: String, required: true },
+    replyMessage: { type: String},
     repliedBy:    { type: String, default: "" },   // userId
     repliedByName:{ type: String, default: "" },   // user name
     repliedByRole:{ type: String, default: "" },   // role
     status:       { type: String, default: "" },   // status at time of reply
     priority:     { type: String, default: "" },   // priority at time of reply
+    replyDocument: { type: String, }, 
   },
   { timestamps: true }
 );

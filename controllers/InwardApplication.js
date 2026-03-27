@@ -2,6 +2,8 @@
 
 
 const InwardApplication = require("../models/InwardApplication");
+const CitizenAppointment = require("../models/CitizenAppointment"); // ✅ import at top
+
 
 // ─────────────────────────────────────────────
 //  ADD INWARD APPLICATION
@@ -84,6 +86,7 @@ exports.addInwardApplication = async (req, res) => {
       subject, description, office, mainDepartment, subDepartment, priority,
       followUp, status,
       submittedById, submittedByName, submittedByRole, submittedByUserName, submittedByDept,
+      existingTokenNo,   // ✅ citizen चा existing token
     } = req.body;
 
     const existingApplication = await InwardApplication.findOne({ inwardNo });
@@ -102,7 +105,10 @@ exports.addInwardApplication = async (req, res) => {
 const visitorPhotoPath = req.files?.visitorPhoto?.[0]?.path || null;
 
     // ✅ Token generate करा
-    const tokenNo = await generateToken();
+    
+    // const tokenNo = await generateToken();
+        const tokenNo = existingTokenNo ? existingTokenNo : await generateToken();
+
 
     const newApplication = new InwardApplication({
       inwardNo, submissionDate, fullName, mobile, email, wardNo, ward, address,
@@ -349,65 +355,147 @@ exports.getAllApplications = async (req, res) => {
 // ─────────────────────────────────────────────
 //  REPLY APPLICATION  →  POST /api/replyApplication
 // ─────────────────────────────────────────────
+// exports.replyApplication = async (req, res) => {
+//   try {
+//     const {
+//       applicationId,   // _id of InwardApplication
+//       replyMessage,    // reply text (required)
+//       status,          // new status
+//       priority,        // new priority
+//       repliedBy,       // userId of admin/minister
+//       repliedByName,   // display name
+//       repliedByRole,   // role
+//     } = req.body;
+
+//     // ── Validation ──
+//     if (!applicationId) {
+//       return res.status(400).json({ success: false, message: "applicationId is required" });
+//     }
+//     if (!replyMessage || !replyMessage.trim()) {
+//       return res.status(400).json({ success: false, message: "replyMessage is required" });
+//     }
+
+//     // ── Application शोधा ──
+//     const application = await InwardApplication.findById(applicationId);
+//     if (!application) {
+//       return res.status(404).json({ success: false, message: "Application not found" });
+//     }
+
+
+//     // ✅ replyDocument file path (if uploaded)
+//     // const replyDocumentPath = req.file ? req.file.path : null;
+//     const replyDocumentPath = req.files?.replyDocument?.[0]?.path || null;
+
+//     // ── नवीन reply push करा ──
+//     const newReply = {
+//       replyMessage: replyMessage.trim(),
+//       repliedBy:    repliedBy    || "",
+//       repliedByName:repliedByName|| "",
+//       repliedByRole:repliedByRole|| "",
+//       status:       status       || application.status,
+//       priority:     priority     || application.priority,
+//      replyDocument: replyDocumentPath || "",  // ✅ save file path
+ 
+//     };
+
+//     application.replies.push(newReply);
+
+//     // ── Status आणि Priority update करा ──
+//     if (status)   application.status   = status;
+//     if (priority) application.priority = priority;
+
+//     await application.save();
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Reply Added Successfully",
+//       data: {
+//         applicationId: application._id,
+//         inwardNo:      application.inwardNo,
+//         status:        application.status,
+//         priority:      application.priority,
+//         latestReply:   application.replies[application.replies.length - 1],
+//         totalReplies:  application.replies.length,
+//       },
+//     });
+
+//   } catch (error) {
+//     console.error("Reply Application Error:", error);
+//     res.status(500).json({ success: false, message: "Server Error", error: error.message });
+//   }
+// };
+
+
+
 exports.replyApplication = async (req, res) => {
   try {
+    const { tokenNo } = req.params;  // ✅ from URL like updateAppointmentStatus uses :id
+
     const {
-      applicationId,   // _id of InwardApplication
-      replyMessage,    // reply text (required)
-      status,          // new status
-      priority,        // new priority
-      repliedBy,       // userId of admin/minister
-      repliedByName,   // display name
-      repliedByRole,   // role
+      replyMessage,
+      status,
+      priority,
+      repliedBy,
+      repliedByName,
+      repliedByRole,
     } = req.body;
 
-    // ── Validation ──
-    if (!applicationId) {
-      return res.status(400).json({ success: false, message: "applicationId is required" });
+    if (!tokenNo) {
+      return res.status(400).json({ success: false, message: "tokenNo is required ❌" });
     }
     if (!replyMessage || !replyMessage.trim()) {
-      return res.status(400).json({ success: false, message: "replyMessage is required" });
+      return res.status(400).json({ success: false, message: "replyMessage is required ❌" });
     }
 
-    // ── Application शोधा ──
-    const application = await InwardApplication.findById(applicationId);
+    // ✅ Find InwardApplication by tokenNo (like findByIdAndUpdate pattern)
+    const application = await InwardApplication.findOne({ tokenNo });
     if (!application) {
-      return res.status(404).json({ success: false, message: "Application not found" });
+      return res.status(404).json({ success: false, message: "Application not found ❌" });
     }
 
-    // ── नवीन reply push करा ──
+    const replyDocumentPath = req.files?.replyDocument?.[0]?.path || null;
+
     const newReply = {
-      replyMessage: replyMessage.trim(),
-      repliedBy:    repliedBy    || "",
-      repliedByName:repliedByName|| "",
-      repliedByRole:repliedByRole|| "",
-      status:       status       || application.status,
-      priority:     priority     || application.priority,
+      replyMessage:  replyMessage.trim(),
+      repliedBy:     repliedBy     || "",
+      repliedByName: repliedByName || "",
+      repliedByRole: repliedByRole || "",
+      status:        status        || application.status,
+      priority:      priority      || application.priority,
+      replyDocument: replyDocumentPath || "",
     };
 
     application.replies.push(newReply);
-
-    // ── Status आणि Priority update करा ──
     if (status)   application.status   = status;
     if (priority) application.priority = priority;
-
     await application.save();
 
-    res.status(200).json({
+    // ✅ Sync CitizenAppointment by tokenId (same as updateAppointmentStatus pattern)
+    if (["pending", "approved", "rejected", "expired"].includes(status?.toLowerCase())) {
+      await CitizenAppointment.findOneAndUpdate(
+        { tokenId: tokenNo },
+        {
+          status:    status.toLowerCase(),
+          adminNote: replyMessage.trim(),
+        },
+        { new: true }
+      );
+    }
+
+    return res.status(200).json({
       success: true,
-      message: "Reply Added Successfully",
+      message: "Reply Added Successfully ✅",
       data: {
-        applicationId: application._id,
-        inwardNo:      application.inwardNo,
-        status:        application.status,
-        priority:      application.priority,
-        latestReply:   application.replies[application.replies.length - 1],
-        totalReplies:  application.replies.length,
+        tokenNo:      application.tokenNo,
+        status:       application.status,
+        priority:     application.priority,
+        latestReply:  application.replies[application.replies.length - 1],
+        totalReplies: application.replies.length,
       },
     });
 
   } catch (error) {
     console.error("Reply Application Error:", error);
-    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
   }
 };

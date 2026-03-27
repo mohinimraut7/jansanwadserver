@@ -55,6 +55,8 @@ const citizenAppointmentSchema = new mongoose.Schema(
 
     // ── Admin notes ───────────────────────────────────────────────────────
     adminNote: { type: String, default: "" },
+    replyDocument: { type: String, default: "" }, // ✅ ADD
+
     // In CitizenAppointment schema, add:
 microStart:  { type: String, default: "" },
 microEnd:    { type: String, default: "" },

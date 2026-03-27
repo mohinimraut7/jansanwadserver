@@ -1448,6 +1448,8 @@
 // ====================================================
 
 
+const InwardApplication  = require("../models/InwardApplication"); // ✅ add only this
+
 const Citizen            = require("../models/Citizen");
 const CitizenAppointment = require("../models/CitizenAppointment");
 const Availability       = require("../models/Availability");
@@ -2374,30 +2376,111 @@ exports.getAllAppointments = async (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // ✅ UPDATE APPOINTMENT STATUS (Admin)
 // ══════════════════════════════════════════════════════════════════════════════
+// exports.updateAppointmentStatus = async (req, res) => {
+//   try {
+//     const { id }                = req.params;
+//     const { status, adminNote } = req.body;
+
+//     if (!["pending", "approved", "rejected", "expired"].includes(status)) {
+//       return res.status(400).json({ success: false, message: "Invalid status ❌" });
+//     }
+
+//     const appt = await CitizenAppointment.findByIdAndUpdate(
+//       id,
+//       { status, adminNote: adminNote || "" },
+//       { new: true }
+//     );
+//     if (!appt) {
+//       return res.status(404).json({ success: false, message: "Appointment Not Found ❌" });
+//     }
+
+//     return res.status(200).json({ success: true, message: "Status Updated ✅", appointment: appt });
+//   } catch (error) {
+//     console.error("Update Status Error:", error);
+//     return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
+//   }
+// };
+
+
 exports.updateAppointmentStatus = async (req, res) => {
   try {
-    const { id }                = req.params;
-    const { status, adminNote } = req.body;
+    const { id } = req.params; // CitizenAppointment _id only
 
-    if (!["pending", "approved", "rejected", "expired"].includes(status)) {
+    const {
+      status,
+      adminNote,
+      // ── Fields pulled from replyApplication ──
+      replyMessage,
+      priority,
+      repliedBy,
+      repliedByName,
+      repliedByRole,
+    } = req.body;
+
+    // ── Soft status validation (no mandatory) ──
+    if (status && !["pending", "approved", "rejected", "expired"].includes(status)) {
       return res.status(400).json({ success: false, message: "Invalid status ❌" });
     }
 
-    const appt = await CitizenAppointment.findByIdAndUpdate(
-      id,
-      { status, adminNote: adminNote || "" },
-      { new: true }
-    );
+    // ── Build CitizenAppointment update payload ──
+    const apptUpdate = {};
+    if (status)                  apptUpdate.status    = status;
+    if (adminNote !== undefined) apptUpdate.adminNote = adminNote;
+    else if (replyMessage)       apptUpdate.adminNote = replyMessage.trim();
+  const replyDocumentPath = req.files?.replyDocument?.[0]?.path || null; // ✅ ADD
+if (replyDocumentPath)       apptUpdate.replyDocument = replyDocumentPath; // ✅ ADD
+
+
+    // ── Find by _id only ──
+    const appt = await CitizenAppointment.findByIdAndUpdate(id, apptUpdate, { new: true });
     if (!appt) {
       return res.status(404).json({ success: false, message: "Appointment Not Found ❌" });
     }
 
-    return res.status(200).json({ success: true, message: "Status Updated ✅", appointment: appt });
+    // ── Sync InwardApplication via appt.tokenId ──
+    const tokenNo = appt.tokenId;
+    const application = tokenNo ? await InwardApplication.findOne({ tokenNo }) : null;
+
+    if (application) {
+      const replyDocumentPath = req.files?.replyDocument?.[0]?.path || null;
+
+      if (replyMessage?.trim()) {
+        const newReply = {
+          replyMessage:  replyMessage.trim(),
+          repliedBy:     repliedBy     || "",
+          repliedByName: repliedByName || "",
+          repliedByRole: repliedByRole || "",
+          status:        status        || application.status,
+          priority:      priority      || application.priority,
+          replyDocument: replyDocumentPath || "",
+        };
+        application.replies.push(newReply);
+      }
+
+      if (status)   application.status   = status;
+      if (priority) application.priority = priority;
+
+      await application.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Status Updated ✅",
+      appointment: appt,
+      ...(application && {
+        applicationSynced: true,
+        tokenNo:           application.tokenNo,
+        status:            application.status,
+        totalReplies:      application.replies.length,
+      }),
+    });
+
   } catch (error) {
     console.error("Update Status Error:", error);
     return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
   }
 };
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ✅ GET CITIZEN BY USERNAME (kept for backward compatibility)

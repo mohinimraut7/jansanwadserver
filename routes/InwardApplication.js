@@ -24,8 +24,17 @@ router.get(
 );
 
 // ── Reply Application ──   POST /api/replyApplication
-router.post(
-  "/replyApplication",
+// router.post(
+//   "/replyApplication",
+//    uploadInwardApplication,   // ✅ same middleware handles replyDocument too
+//   replyApplication
+// );
+
+
+// ✅ After
+router.patch(
+  "/replyApplication/:tokenNo",
+  uploadInwardApplication,
   replyApplication
 );
 
