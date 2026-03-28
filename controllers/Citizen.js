@@ -2374,6 +2374,7 @@ exports.getAllAppointments = async (req, res) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
+
 // ✅ UPDATE APPOINTMENT STATUS (Admin)
 // ══════════════════════════════════════════════════════════════════════════════
 // exports.updateAppointmentStatus = async (req, res) => {
