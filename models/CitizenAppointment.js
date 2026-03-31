@@ -45,7 +45,7 @@ const citizenAppointmentSchema = new mongoose.Schema(
     // ── Status ────────────────────────────────────────────────────────────
     status: {
       type:    String,
-      enum:    ["pending", "approved", "rejected", "expired"],
+      enum:    ["pending","in progress","approved", "rejected", "expired","resolved"],
       default: "pending",
     },
 

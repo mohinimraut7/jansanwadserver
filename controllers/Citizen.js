@@ -2419,7 +2419,7 @@ exports.updateAppointmentStatus = async (req, res) => {
     } = req.body;
 
     // ── Soft status validation (no mandatory) ──
-    if (status && !["pending", "approved", "rejected", "expired"].includes(status)) {
+    if (status && !["pending", "approved", "rejected", "expired","in progress","resolved"].includes(status)) {
       return res.status(400).json({ success: false, message: "Invalid status ❌" });
     }
 
