@@ -288,6 +288,70 @@ function isDepartmentTagMatch(userDepartmentName, parsedTagTo) {
 // ─────────────────────────────────────────────────────────────
 //  Controller
 // ─────────────────────────────────────────────────────────────
+// Original
+// exports.getAllApplications = async (req, res) => {
+//   try {
+//     const {
+//       role,
+//       userId,
+//       userOffice,
+//       userDepartmentCategory,
+//       userDepartmentName,      // ← NEW param sent from frontend
+//     } = req.query;
+
+//     // ── Super Admin: full access (unchanged) ──
+//     const fullAccessRoles = ["Super Admin"];
+//     if (fullAccessRoles.includes(role)) {
+//       const applications = await InwardApplication.find({}).sort({ createdAt: -1 });
+//       return res.status(200).json({
+//         success: true,
+//         message: "Applications Fetched Successfully",
+//         data: applications,
+//       });
+//     }
+
+//     // ── All other roles: apply filters ──
+//     const allApps = await InwardApplication.find({}).sort({ createdAt: -1 });
+
+//     const filtered = allApps.filter((app) => {
+//       // 1. Always show applications submitted by this user
+//       if (userId && app.submittedById === userId) return true;
+
+//       const parsedTagTo = parseTagTo(app.tagTo);
+
+//       // 2. Existing filters (unchanged)
+//       const roleMatch    = role                   ? isRoleMatch(role, parsedTagTo)                                                           : false;
+//       const officeMatch  = userOffice             ? app.office?.toLowerCase().trim() === userOffice.toLowerCase().trim()                     : false;
+//       const deptCatMatch = userDepartmentCategory ? app.mainDepartment?.toLowerCase().trim() === userDepartmentCategory.toLowerCase().trim() : false;
+
+//       // 3. NEW: case-insensitive departmentName match against tagTo
+//       const deptTagMatch = userDepartmentName
+//         ? isDepartmentTagMatch(userDepartmentName, parsedTagTo)
+//         : false;
+
+//       // Original condition (unchanged): roleMatch && officeMatch && deptCatMatch
+//       // Additional condition (NEW):     deptTagMatch (user's dept is tagged)
+//       return (roleMatch && officeMatch && deptCatMatch) || deptTagMatch;
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Applications Fetched Successfully",
+//       data: filtered,
+//     });
+
+//   } catch (error) {
+//     console.error("Get All Applications Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+
 exports.getAllApplications = async (req, res) => {
   try {
     const {
@@ -296,16 +360,29 @@ exports.getAllApplications = async (req, res) => {
       userOffice,
       userDepartmentCategory,
       userDepartmentName,      // ← NEW param sent from frontend
+      page  = 1,        // ← ADD
+      limit = 20,       // ← ADD
     } = req.query;
+
+      const pageNum  = parseInt(page);    // ← ADD
+    const limitNum = parseInt(limit);   // ← ADD
+    const skip     = (pageNum - 1) * limitNum;  // ← ADD
 
     // ── Super Admin: full access (unchanged) ──
     const fullAccessRoles = ["Super Admin"];
     if (fullAccessRoles.includes(role)) {
-      const applications = await InwardApplication.find({}).sort({ createdAt: -1 });
+      const total = await InwardApplication.countDocuments({});  // ← ADD
+      const applications = await InwardApplication.find({})
+      .sort({ createdAt: -1 })
+      .skip(skip)       // ← ADD
+        .limit(limitNum); // ← ADD
       return res.status(200).json({
         success: true,
         message: "Applications Fetched Successfully",
         data: applications,
+        total,                              // ← ADD
+        totalPages: Math.ceil(total / limitNum), // ← ADD
+        page:       pageNum,                // ← ADD
       });
     }
 
@@ -333,10 +410,16 @@ exports.getAllApplications = async (req, res) => {
       return (roleMatch && officeMatch && deptCatMatch) || deptTagMatch;
     });
 
+    const total     = filtered.length;                          // ← ADD
+    const paginated = filtered.slice(skip, skip + limitNum);    // ← ADD
+
     res.status(200).json({
       success: true,
       message: "Applications Fetched Successfully",
-      data: filtered,
+      data:       paginated,       // ← CHANGE: was `filtered`
+      total,                       // ← ADD
+      totalPages: Math.ceil(total / limitNum), // ← ADD
+      page:       pageNum,         // ← ADD
     });
 
   } catch (error) {
@@ -349,6 +432,77 @@ exports.getAllApplications = async (req, res) => {
   }
 };
 
+
+
+// exports.getAllApplications = async (req, res) => {
+//   try {
+//     const {
+//       role,
+//       userId,
+//       userOffice,
+//       userDepartmentCategory,
+//       userDepartmentName,
+//       page  = 1,
+//       limit = 20,
+//     } = req.query;
+
+//     const pageNum  = parseInt(page);
+//     const limitNum = parseInt(limit);
+//     const skip     = (pageNum - 1) * limitNum;
+
+//     const fullAccessRoles = ["Super Admin"];
+//     if (fullAccessRoles.includes(role)) {
+//       const total        = await InwardApplication.countDocuments({});
+//       const applications = await InwardApplication.find({})
+//         .sort({ createdAt: -1 })
+//         .skip(skip)
+//         .limit(limitNum);
+//       return res.status(200).json({
+//         success: true,
+//         message: "Applications Fetched Successfully",
+//         data:        applications,
+//         total,
+//         page:        pageNum,
+//         limit:       limitNum,
+//         totalPages:  Math.ceil(total / limitNum),
+//       });
+//     }
+
+//     // All other roles: fetch all, filter, then paginate in memory
+//     const allApps = await InwardApplication.find({}).sort({ createdAt: -1 });
+
+//     const filtered = allApps.filter((app) => {
+//       if (userId && app.submittedById === userId) return true;
+//       const parsedTagTo  = parseTagTo(app.tagTo);
+//       const roleMatch    = role                   ? isRoleMatch(role, parsedTagTo)                                                           : false;
+//       const officeMatch  = userOffice             ? app.office?.toLowerCase().trim() === userOffice.toLowerCase().trim()                     : false;
+//       const deptCatMatch = userDepartmentCategory ? app.mainDepartment?.toLowerCase().trim() === userDepartmentCategory.toLowerCase().trim() : false;
+//       const deptTagMatch = userDepartmentName     ? isDepartmentTagMatch(userDepartmentName, parsedTagTo)                                    : false;
+//       return (roleMatch && officeMatch && deptCatMatch) || deptTagMatch;
+//     });
+
+//     const total     = filtered.length;
+//     const paginated = filtered.slice(skip, skip + limitNum);
+
+//     res.status(200).json({
+//       success:    true,
+//       message:    "Applications Fetched Successfully",
+//       data:       paginated,
+//       total,
+//       page:       pageNum,
+//       limit:      limitNum,
+//       totalPages: Math.ceil(total / limitNum),
+//     });
+
+//   } catch (error) {
+//     console.error("Get All Applications Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server Error",
+//       error:   error.message,
+//     });
+//   }
+// };
 
 
 
