@@ -1693,6 +1693,101 @@ exports.loginCitizen = async (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // ✅ LOGIN BY MOBILE (OTP style) — Citizen model vaprto, auto-register karto
 // ══════════════════════════════════════════════════════════════════════════════
+// exports.citizenLoginByMobile = async (req, res) => {
+//   try {
+//     const { mobileNo } = req.body;
+
+//     console.log("📱 citizenLoginByMobile called:", mobileNo);
+
+//     if (!mobileNo) {
+//       return res.status(400).json({ success: false, message: "Mobile number required ❌" });
+//     }
+
+//     const trimmed = mobileNo.toString().trim();
+
+//     if (!/^\d{10}$/.test(trimmed)) {
+//       return res.status(400).json({ success: false, message: "Valid 10 digit mobile number द्या ❌" });
+//     }
+
+//     // Citizen शोधा
+//     let citizen = await Citizen.findOne({ mobileNumber: trimmed });
+
+//     console.log("🔍 Citizen found:", citizen ? citizen.fullName : "NOT FOUND");
+
+//     // नसेल तर auto-register
+//     if (!citizen) {
+//       console.log("🆕 Auto registering citizen:", trimmed);
+
+//       citizen = await Citizen.create({
+//         fullName:     `नागरिक ${trimmed.slice(-4)}`,
+//         mobileNumber: trimmed,
+//         email:        "",
+//         password:     trimmed,   // ← bcrypt नाही, plain — User model सारखाच
+//       });
+
+//       console.log("✅ Auto-registered:", citizen.fullName);
+//     }
+
+//     const token = jwt.sign(
+//       { id: citizen._id, mobileNumber: citizen.mobileNumber },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "7d" }
+//     );
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "OTP Login Success ✅",
+//       token,
+//       citizen: {
+//         _id:          citizen._id,
+//         fullName:     citizen.fullName,
+//         mobileNumber: citizen.mobileNumber,
+//         email:        citizen.email,
+//       },
+//     });
+
+//   } catch (error) {
+//     console.error("CitizenLoginByMobile Error:", error);
+//     return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
+//   }
+// };
+
+
+exports.checkCitizenMobile = async (req, res) => {
+  try {
+    const { mobileNo } = req.body;
+
+    if (!mobileNo) {
+      return res.status(400).json({ success: false, message: "Mobile number required ❌" });
+    }
+
+    const trimmed = mobileNo.toString().trim();
+
+    if (!/^\d{10}$/.test(trimmed)) {
+      return res.status(400).json({ success: false, message: "Valid 10 digit mobile number द्या ❌" });
+    }
+
+    const citizen = await Citizen.findOne({ mobileNumber: trimmed });
+
+    if (!citizen) {
+      return res.status(404).json({
+        success: false,
+        message: "Mobile number not registered. Please register first ❌",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Mobile verified ✅ OTP पाठवा",
+    });
+
+  } catch (error) {
+    console.error("checkCitizenMobile Error:", error);
+    return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
+  }
+};
+
+
 exports.citizenLoginByMobile = async (req, res) => {
   try {
     const { mobileNo } = req.body;
@@ -1709,23 +1804,17 @@ exports.citizenLoginByMobile = async (req, res) => {
       return res.status(400).json({ success: false, message: "Valid 10 digit mobile number द्या ❌" });
     }
 
-    // Citizen शोधा
+    // Find citizen
     let citizen = await Citizen.findOne({ mobileNumber: trimmed });
 
     console.log("🔍 Citizen found:", citizen ? citizen.fullName : "NOT FOUND");
 
-    // नसेल तर auto-register
+    // ✅ If citizen not found — block login, ask to register first
     if (!citizen) {
-      console.log("🆕 Auto registering citizen:", trimmed);
-
-      citizen = await Citizen.create({
-        fullName:     `नागरिक ${trimmed.slice(-4)}`,
-        mobileNumber: trimmed,
-        email:        "",
-        password:     trimmed,   // ← bcrypt नाही, plain — User model सारखाच
+      return res.status(404).json({
+        success: false,
+        message: "Mobile number not registered. Please register first ❌",
       });
-
-      console.log("✅ Auto-registered:", citizen.fullName);
     }
 
     const token = jwt.sign(
@@ -1751,6 +1840,7 @@ exports.citizenLoginByMobile = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
   }
 };
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ✅ BOOK APPOINTMENT

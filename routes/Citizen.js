@@ -10,6 +10,7 @@ const {
   getAppointmentCard,
   getAllAppointments,
   updateAppointmentStatus,
+  checkCitizenMobile,
   citizenLoginByMobile,
   getMicroSlots,
   getCitizenByUsername,
@@ -40,6 +41,7 @@ const upload = multer({
 // ── Citizen Auth ──────────────────────────────────────────────────────────────
 router.post("/register",registerCitizen);
 router.post("/login",loginCitizen);
+router.post("/check-mobile", checkCitizenMobile);
 router.post("/citizenLoginByMobile",    citizenLoginByMobile);
 
 // ── Appointments ──────────────────────────────────────────────────────────────

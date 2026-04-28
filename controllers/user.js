@@ -359,7 +359,7 @@ exports.registerUser = async (req, res) => {
     departmentName = departmentName?.trim();  // <-- use departmentName, not email
 
     // Validation
-    if (!fullName || !userName || !mobileNumber || !email || !password) {
+    if (!fullName || !userName || !mobileNumber || !password) {
       return res.status(400).json({
         success: false,
         message: "All fields required ❌",
