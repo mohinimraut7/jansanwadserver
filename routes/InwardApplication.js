@@ -5,6 +5,7 @@ const {
   addInwardApplication,
   getAllApplications,
   replyApplication,          // ← NEW
+  sendWhatsAppMessage
 } = require("../controllers/InwardApplication");
 
 const uploadInwardApplication = require("../middlewares/uploadInwardApplication");
@@ -16,6 +17,8 @@ router.post(
     uploadInwardApplication,
   addInwardApplication
 );
+
+router.post("/sendWhatsApp", sendWhatsAppMessage);
 
 // ── Get All Applications ──
 router.get(

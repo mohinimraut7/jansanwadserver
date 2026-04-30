@@ -141,6 +141,48 @@ const visitorPhotoPath = req.files?.visitorPhoto?.[0]?.path || null;
 
 
 
+exports.sendWhatsAppMessage = async (req, res) => {
+  const { mobile, userName, tokenNo, deptName, portalLink, displayMobile } = req.body;
+  try {
+    const axios = require("axios");
+    const response = await axios.post(
+      "https://wafortius.in.net/V23.0/1091751790690187/messages",
+      {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: `91${mobile}`,
+        type: "template",
+        template: {
+          name: "complaint_assigned",
+          language: { code: "en" },
+          components: [{
+            type: "body",
+            parameters: [
+              { type: "text", text: userName || "Officer" },
+              { type: "text", text: tokenNo },
+              { type: "text", text: deptName },
+              { type: "text", text: portalLink },
+              { type: "text", text: displayMobile },
+            ],
+          }],
+        },
+      },
+      {
+        headers: {
+          Authorization: "Bearer 633744b1-4b58-484c-abf0-a46d878e413d",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return res.status(200).json({ success: true, data: response.data });
+  } catch (err) {
+    console.error("❌ WhatsApp error:", err?.response?.data || err.message);
+    return res.status(500).json({ success: false, error: err?.response?.data || err.message });
+  }
+};
+
+
+
 // ─────────────────────────────────────────────
 //  HELPERS
 // ─────────────────────────────────────────────

@@ -303,6 +303,91 @@ const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 
 
+
+const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
+
+// ── WhatsApp OTP Send ────────────────────────────
+const WA_API_URL   = "https://wafortius.in.net/V23.0/1091751790690187/messages";
+const WA_API_TOKEN = "633744b1-4b58-484c-abf0-a46d878e413d";
+
+const sendWhatsAppOtp = async (mobile, otp) => {
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type:    "individual",
+    to:                `91${mobile}`,
+    type:              "template",
+    template: {
+      name:     "citizen_otp",
+      language: { code: "en" },
+      components: [
+        {
+          type:       "body",
+          parameters: [{ type: "text", text: String(otp) }],
+        },
+        {
+          type:       "button",
+          sub_type:   "url",
+          index:      "0",
+          parameters: [{ type: "text", text: String(otp) }],
+        },
+      ],
+    },
+  };
+
+  const res = await fetch(WA_API_URL, {
+    method:  "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization:  `Bearer ${WA_API_TOKEN}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  console.log("✅ WhatsApp OTP:", data);
+  return data;
+};
+// ─────────────────────────────────────────────────
+
+
+
+// ✅ SEND OTP — OTP generate करा + WhatsApp वर पाठवा
+exports.sendOtp = async (req, res) => {
+  try {
+    const { mobileNo } = req.body;
+
+    if (!mobileNo || !/^\d{10}$/.test(mobileNo.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid 10 digit mobile number required ❌",
+      });
+    }
+
+    const mobile = mobileNo.trim();
+
+    // OTP generate करा
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // WhatsApp वर पाठवा
+    await sendWhatsAppOtp(mobile, otp);
+
+    // OTP return करा frontend ला (verify साठी)
+    return res.status(200).json({
+      success: true,
+      message: "OTP पाठवला ✅",
+      otp,          // frontend ला verify साठी
+    });
+
+  } catch (error) {
+    console.log("SendOTP Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "OTP पाठवण्यात error ❌",
+    });
+  }
+};
+
+
 // // ✅ REGISTER USER
 // exports.registerUser = async (req, res) => {
 //   try {
@@ -543,47 +628,98 @@ exports.loginUser = async (req, res) => {
 
 // 📁 userController.js मध्ये loginByMobile हे replace करा
 
+// exports.loginByMobile = async (req, res) => {
+//   try {
+//     const { mobileNo } = req.body;
+
+//     console.log("📱 loginByMobile called:", mobileNo);
+
+//     if (!mobileNo) {
+//       return res.status(400).json({ success: false, message: "Mobile number required ❌" });
+//     }
+
+//     const trimmed = mobileNo.toString().trim();
+
+//     // mobileNumber OR mobileno — दोन्ही try करतो
+//     let user = await User.findOne({
+//       $or: [
+//         { mobileNumber: trimmed },
+//         { mobileno: trimmed },
+//         { mobile: trimmed },
+//         { phone: trimmed },
+//       ]
+//     });
+
+//     console.log("🔍 User found:", user ? user.userName : "NOT FOUND");
+
+//     // ✅ User नसला तर auto-register करतो
+//     if (!user) {
+//       console.log("🆕 User not found — auto registering:", trimmed);
+
+//       user = await User.create({
+//         mobileNumber: trimmed,
+//         mobileno: trimmed,
+//         mobile: trimmed,
+//         userName: `user_${trimmed.slice(-4)}`,   // शेवटचे 4 digits username
+//         fullName: `User ${trimmed.slice(-4)}`,
+//         role: "User",
+//         departmentName: "",
+//         office: "",
+//         departmentCategory: "",
+//       });
+
+//       console.log("✅ Auto-registered user:", user.userName);
+//     }
+
+//     const token = jwt.sign(
+//       { id: user._id, userName: user.userName, role: user.role },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "7d" }
+//     );
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "OTP Login Success ✅",
+//       token,
+//       user: {
+//         id:                 user._id,
+//         fullName:           user.fullName,
+//         userName:           user.userName,
+//         role:               user.role,
+//         departmentName:     user.departmentName,
+//         office:             user.office,
+//         departmentCategory: user.departmentCategory,
+//       },
+//     });
+
+//   } catch (error) {
+//     console.log("LoginByMobile Error:", error);
+//     return res.status(500).json({ success: false, message: "Server Error ❌" });
+//   }
+// };
+
+
 exports.loginByMobile = async (req, res) => {
   try {
     const { mobileNo } = req.body;
 
-    console.log("📱 loginByMobile called:", mobileNo);
-
     if (!mobileNo) {
-      return res.status(400).json({ success: false, message: "Mobile number required ❌" });
+      return res.status(400).json({ 
+        success: false, 
+        message: "Mobile number required ❌" 
+      });
     }
 
     const trimmed = mobileNo.toString().trim();
 
-    // mobileNumber OR mobileno — दोन्ही try करतो
-    let user = await User.findOne({
-      $or: [
-        { mobileNumber: trimmed },
-        { mobileno: trimmed },
-        { mobile: trimmed },
-        { phone: trimmed },
-      ]
-    });
+    // फक्त mobileNumber field check करा
+    const user = await User.findOne({ mobileNumber: trimmed });
 
-    console.log("🔍 User found:", user ? user.userName : "NOT FOUND");
-
-    // ✅ User नसला तर auto-register करतो
     if (!user) {
-      console.log("🆕 User not found — auto registering:", trimmed);
-
-      user = await User.create({
-        mobileNumber: trimmed,
-        mobileno: trimmed,
-        mobile: trimmed,
-        userName: `user_${trimmed.slice(-4)}`,   // शेवटचे 4 digits username
-        fullName: `User ${trimmed.slice(-4)}`,
-        role: "User",
-        departmentName: "",
-        office: "",
-        departmentCategory: "",
+      return res.status(404).json({
+        success: false,
+        message: "हे mobile number नोंदणीकृत नाही ❌",
       });
-
-      console.log("✅ Auto-registered user:", user.userName);
     }
 
     const token = jwt.sign(
@@ -609,7 +745,51 @@ exports.loginByMobile = async (req, res) => {
 
   } catch (error) {
     console.log("LoginByMobile Error:", error);
-    return res.status(500).json({ success: false, message: "Server Error ❌" });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Server Error ❌" 
+    });
+  }
+};
+
+
+// ✅ CHECK MOBILE — OTP पाठवण्यापूर्वी mobile registered आहे का check करा
+exports.checkMobile = async (req, res) => {
+  try {
+    const { mobileNo } = req.body;
+
+    if (!mobileNo) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Mobile number required ❌" 
+      });
+    }
+
+    const trimmed = mobileNo.toString().trim();
+
+    if (!/^\d{10}$/.test(trimmed)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid mobile number ❌" 
+      });
+    }
+
+    const user = await User.findOne({ mobileNumber: trimmed });
+
+    return res.status(200).json({
+      success: true,
+      exists: !!user,
+      message: user 
+        ? "Mobile number registered आहे ✅" 
+        : "Mobile number registered नाही ❌",
+    });
+
+  } catch (error) {
+    console.log("CheckMobile Error:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Server Error ❌" 
+    });
   }
 };
 

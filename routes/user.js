@@ -5,6 +5,8 @@ const {
   registerUser,
   loginUser,
   loginByMobile,
+  checkMobile,
+    sendOtp,        // ← add करा
   updateUser,
   getUsers,
   deleteUser
@@ -16,7 +18,8 @@ router.post("/register", registerUser);
 // ✅ Login
 router.post("/login", loginUser);
 router.post("/loginByMobile",loginByMobile);
-
+router.post("/sendOtp",      sendOtp);       // ← add करा
+router.post("/checkMobile", checkMobile);   // ← हे add करा
 
 
 // ✅ Update user by id
