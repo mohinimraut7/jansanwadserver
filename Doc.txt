@@ -3,3 +3,5 @@ npm install qrcode --save
 superadmin
 mohinimraut
 123456
+=============
+npm i node-fetch
