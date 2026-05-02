@@ -1460,6 +1460,133 @@ const jwt                = require("jsonwebtoken");
 
 const { generate15MinSlots } = require("../utils/slotUtils");
 
+
+
+
+
+
+
+const sendWhatsAppAppointmentBooked = async (mobile, fullName, status, preferredDate, microSlot, tokenId) => {
+  const axios = require("axios");
+
+  const formatShort = (d) => {
+    if (!d) return "—";
+    return new Date(d + "T00:00:00").toLocaleDateString("en-IN", {
+      weekday: "short", day: "numeric", month: "short", year: "numeric",
+    });
+  };
+
+  const statusMessage = {
+    pending:   "Pending — Awaiting Mayor's Approval",
+    approved:  "Approved by Respected Mayor Ajiv Patil Sir",
+    rejected:  "Rejected by Admin",
+    cancelled: "Cancelled",
+  }[status] || status;
+
+  const waApiUrl = "https://wafortius.in.net/V23.0/1091751790690187/messages";
+  const waApiKey = "633744b1-4b58-484c-abf0-a46d878e413d";
+
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type:    "individual",
+    to:                `91${mobile}`,          // ✅ 91 prefix
+    type:              "template",
+    template: {
+      name:     "appointment_booked_citizen",
+      language: { code: "en" },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: fullName                   },  // {{1}}
+            { type: "text", text: statusMessage              },  // {{2}}
+            { type: "text", text: formatShort(preferredDate) },  // {{3}}
+            { type: "text", text: microSlot || "—"           },  // {{4}}
+            { type: "text", text: String(tokenId)            },  // {{5}}
+          ],
+        },
+      ],
+    },
+  };
+
+  try {
+    const { data } = await axios.post(waApiUrl, payload, {
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${waApiKey}`,
+      },
+    });
+    console.log(`✅ WhatsApp sent to ${mobile}:`, JSON.stringify(data));
+  } catch (err) {
+    console.error(`❌ WhatsApp error:`, err?.response?.data || err.message);
+  }
+};
+
+
+
+
+
+exports.sendWhatsAppMessage = async (req, res) => {
+  const axios = require("axios");
+  const { mobile, fullName, status, preferredDate, microSlot, tokenId } = req.body;
+
+  const formatShort = (d) => {
+    if (!d) return "—";
+    return new Date(d + "T00:00:00").toLocaleDateString("en-IN", {
+      weekday: "short", day: "numeric", month: "short", year: "numeric",
+    });
+  };
+
+  const statusMessage = {
+    pending:   "Pending — Awaiting Mayor's Approval",
+    approved:  "Approved by Respected Mayor Ajiv Patil Sir",
+    rejected:  "Rejected by Admin",
+    cancelled: "Cancelled",
+  }[status] || status;
+
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type:    "individual",
+    to:                `91${mobile}`,
+    type:              "template",
+    template: {
+      name:     "appointment_booked_citizen",
+      language: { code: "en" },
+      components: [{
+        type: "body",
+        parameters: [
+          { type: "text", text: fullName                   },  // {{1}}
+          { type: "text", text: statusMessage              },  // {{2}}
+          { type: "text", text: formatShort(preferredDate) },  // {{3}}
+          { type: "text", text: microSlot || "—"           },  // {{4}}
+          { type: "text", text: String(tokenId)            },  // {{5}}
+        ],
+      }],
+    },
+  };
+
+  try {
+    const { data } = await axios.post(
+      "https://wafortius.in.net/V23.0/1091751790690187/messages",
+      payload,
+      {
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": "Bearer 633744b1-4b58-484c-abf0-a46d878e413d",
+        },
+      }
+    );
+    console.log("✅ WhatsApp sent:", JSON.stringify(data));
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    console.error("❌ WhatsApp error:", err?.response?.data || err.message);
+    return res.status(500).json({ success: false, error: err?.response?.data || err.message });
+  }
+};
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ── Helper: parse slotTime "10:00 - 11:00" → { start, end } ─────────────────
 function parseSlotTime(slotTime) {
   const parts = slotTime.split(" - ");
@@ -2314,7 +2441,20 @@ exports.bookAppointment = async (req, res) => {
 
     const cardUrl = `${process.env.BACKEND_URL || "http://localhost:5000"}/api/citizen/appointment-card/${appt._id}`;
     appt.qrCode = await QRCode.toDataURL(cardUrl);
+    
     await appt.save();
+     // ✅ DEBUG ADD करा
+    console.log("📞 Calling WhatsApp for:", appt.mobileNumber, appt.tokenId);
+
+     // 👇 हे paste करा
+    sendWhatsAppAppointmentBooked(
+      appt.mobileNumber,
+      appt.fullName,
+      appt.status,
+      appt.preferredDate,
+      appt.microSlot,
+      appt.tokenId
+    );
 
     return res.status(201).json({
       success: true,

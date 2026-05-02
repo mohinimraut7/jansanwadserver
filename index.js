@@ -52,7 +52,7 @@ app.use("/api/citizen", citizenRoutes);
 app.get("/", (req, res) => {
   res.send("Hello world....");
 });
-
+console.log("++++++++++",process.env.WA_API_URL,process.env.WA_API_TOKEN)
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

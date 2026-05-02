@@ -15,7 +15,8 @@ const {
   getMicroSlots,
   getCitizenByUsername,
   getCitizenById,
-  getDataByTokenId
+  getDataByTokenId,
+  // sendWhatsAppMessage          // ✅ नवीन import
 } = require("../controllers/Citizen");
 const uploadInwardApplication = require("../middlewares/uploadInwardApplication");
 const uploadCitizenPhoto = require("../middlewares/uploadCitizenPhoto");
@@ -62,4 +63,8 @@ router.get("/by-username/:username", getCitizenByUsername);
 router.get("/by-id/:id", getCitizenById);  // ✅ ADD THIS
 
 router.get("/appointment/token/:tokenId", getDataByTokenId);
+
+// ── WhatsApp ✅ ───────────────────────────────────────────────────────────────
+// router.post("/citizen/send-whatsapp", sendWhatsAppMessage);
+
 module.exports = router;
