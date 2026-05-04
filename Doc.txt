@@ -5,3 +5,14 @@ mohinimraut
 123456
 =============
 npm i node-fetch
+==================================
+JWT_SECRET
+PORT
+MONGO_URI
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+WA_API_URL
+WA_API_TOKEN
+API_BASE_URL
+BACKEND_URL

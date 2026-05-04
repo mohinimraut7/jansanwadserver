@@ -1588,6 +1588,11 @@ exports.sendWhatsAppMessage = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Helper: parse slotTime "10:00 - 11:00" → { start, end } ─────────────────
+
+
+
+
+
 function parseSlotTime(slotTime) {
   const parts = slotTime.split(" - ");
   return { start: parts[0]?.trim(), end: parts[1]?.trim() };

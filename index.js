@@ -13,7 +13,7 @@ const revenueRoutes = require("./routes/revenue");
 const InwardApplicationRoutes = require("./routes/InwardApplication");
 const availabilityRoutes=require("./routes/Availability");
 const citizenRoutes = require("./routes/Citizen");
-
+const meetingRoutes = require("./routes/meetingRoutes");
 // uploads folder serve करण्यासाठी:
 app.use("/uploads", express.static("uploads"));
 
@@ -46,7 +46,7 @@ app.use("/api", revenueRoutes);
 app.use("/api", InwardApplicationRoutes);
 app.use("/api",availabilityRoutes)
 app.use("/api/citizen", citizenRoutes);
-
+app.use("/api", meetingRoutes);
 
 
 app.get("/", (req, res) => {
