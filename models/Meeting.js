@@ -39,6 +39,60 @@
 
 
 
+// const mongoose = require("mongoose");
+
+// const meetingSchema = new mongoose.Schema(
+//   {
+//     meetingNumber: {
+//       type: String,
+//       required: [true, "Meeting Number is required"],
+//       trim: true,
+//       unique: true,
+//     },
+//     meetingType: {
+//       type: String,
+//       required: [true, "Meeting Type is required"],
+//       enum: ["General Body", "Standing Committee"],
+//     },
+//     meetingDate: {
+//       type: Date,
+//       default: null,
+//     },
+//     meetingTime: {
+//       type: String,
+//       trim: true,
+//       default: null,
+//     },
+//      meetingAmpm: {           // ← ADD THIS
+//       type: String,
+//       enum: ["AM", "PM", null],
+//       default: null,
+//     },
+//     subjectId: {
+//       type: String,
+//       trim: true,
+//       default: null,
+//     },
+//     subjectType: {
+//       type: String,
+//       enum: ["General", "Administrative and Financial Approval", "Contract Approval", null],
+//       default: null,
+//     },
+//     subjectName: {
+//       type: String,
+//       trim: true,
+//       default: null,
+//     },
+//   },
+//   {
+//     timestamps: true, // createdAt, updatedAt auto
+//   }
+// );
+
+// module.exports = mongoose.model("Meeting", meetingSchema);
+
+
+
 const mongoose = require("mongoose");
 
 const meetingSchema = new mongoose.Schema(
@@ -63,7 +117,7 @@ const meetingSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
-     meetingAmpm: {           // ← ADD THIS
+    meetingAmpm: {
       type: String,
       enum: ["AM", "PM", null],
       default: null,
@@ -83,6 +137,29 @@ const meetingSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+
+    // ── 3 new fields ──────────────────────────────────────────
+    decisionInMeeting: {
+      type: String,
+      enum: ["Approved", "Rejected", "On-Hold", "Not Conducted", "Postponed", null],
+      default: null,
+    },
+    aiExtractedDecision: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    meetingRecording: {
+      type: String,   // store file path or URL of the recording
+      trim: true,
+      default: null,
+    },
+    meetingRecordingBlob: {
+  type: String,
+  trim: true,
+  default: null,
+},
+    // ─────────────────────────────────────────────────────────
   },
   {
     timestamps: true, // createdAt, updatedAt auto
