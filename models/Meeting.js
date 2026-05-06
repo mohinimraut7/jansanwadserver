@@ -122,21 +122,33 @@ const meetingSchema = new mongoose.Schema(
       enum: ["AM", "PM", null],
       default: null,
     },
-    subjectId: {
-      type: String,
-      trim: true,
-      default: null,
-    },
+    // subjectId: {
+    //   type: String,
+    //   trim: true,
+    //   default: null,
+    // },
+    // subjectType: {
+    //   type: String,
+    //   enum: ["General", "Administrative and Financial Approval", "Contract Approval", null],
+    //   default: null,
+    // },
+    // subjectName: {
+    //   type: String,
+    //   trim: true,
+    //   default: null,
+    // },
+
+    subjects: [
+  {
+    subjectId: { type: String, trim: true, default: null },
     subjectType: {
       type: String,
       enum: ["General", "Administrative and Financial Approval", "Contract Approval", null],
       default: null,
     },
-    subjectName: {
-      type: String,
-      trim: true,
-      default: null,
-    },
+    subjectName: { type: String, trim: true, default: null },
+  }
+],
 
     // ── 3 new fields ──────────────────────────────────────────
     decisionInMeeting: {
@@ -144,6 +156,7 @@ const meetingSchema = new mongoose.Schema(
       enum: ["Approved", "Rejected", "On-Hold", "Not Conducted", "Postponed", null],
       default: null,
     },
+     tagTo: [String],
     aiExtractedDecision: {
       type: String,
       trim: true,

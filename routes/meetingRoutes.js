@@ -25,6 +25,7 @@ const router  = express.Router();
 const {
   getAllMeetings,
   getMeetingById,
+  extractDecisions,
   createMeeting,
   updateMeeting,
   deleteMeeting,
@@ -34,8 +35,12 @@ const uploadMeetingRecording = require("../middlewares/Uploadmeetingrecording");
 
 router.get("/getMeetings",        getAllMeetings);
 router.get("/getMeeting/:id",     getMeetingById);
+router.post("/extractDecisions", extractDecisions);
 router.post("/createMeeting",     uploadMeetingRecording, createMeeting);
 router.put("/updateMeeting/:id",  uploadMeetingRecording, updateMeeting);
 router.delete("/deleteMeeting/:id", deleteMeeting);
 
 module.exports = router;
+
+
+
