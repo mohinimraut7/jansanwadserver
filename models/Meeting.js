@@ -27,8 +27,14 @@ const meetingSchema = new mongoose.Schema(
       enum: ["AM", "PM", null],
       default: null,
     },
-    
-
+      agendaFiles: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: (arr) => arr.length <= 12,
+        message: "Maximum 12 files allowed for agenda",
+      }
+    },
     subjects: [
   {
     subjectId: { type: String, trim: true, default: null },

@@ -9,7 +9,8 @@ const {
   updateMeeting,
     getNextMeetingId,
   deleteMeeting,
-  updateSubject
+  updateSubject,
+  getSignedFileUrl
 
 } = require("../controllers/meetingController");
 
@@ -18,6 +19,7 @@ const uploadMeetingRecording = require("../middlewares/Uploadmeetingrecording");
 router.get("/getMeetings",        getAllMeetings);
 router.get("/getMeeting/:id",     getMeetingById);
 router.post("/extractDecisions", extractDecisions);
+router.post("/getSignedFileUrl", getSignedFileUrl);
 router.post("/createMeeting",     uploadMeetingRecording, createMeeting);
 router.put("/updateMeeting/:id",  uploadMeetingRecording, updateMeeting);
 router.delete("/deleteMeeting/:id", deleteMeeting);
