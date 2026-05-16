@@ -294,6 +294,7 @@ const updateSubject = async (req, res) => {
         subjectType:       req.body.subjectType       || null,
         decisionInMeeting: req.body.decisionInMeeting || null,
         tagTo:             JSON.parse(req.body.tagTo  || "[]"),
+        actionTaken:       req.body.actionTaken       || null,  // ← add
       };
     } catch { return res.status(400).json({ success: false, message: "Invalid tagTo format" }); }
 
@@ -305,6 +306,7 @@ const updateSubject = async (req, res) => {
           "subjects.$.subjectType":       subjectData.subjectType,
           "subjects.$.decisionInMeeting": subjectData.decisionInMeeting,
           "subjects.$.tagTo":             subjectData.tagTo,
+          "subjects.$.actionTaken":       subjectData.actionTaken,  // ← हे missing होते
         },
       },
       { new: true, runValidators: true }

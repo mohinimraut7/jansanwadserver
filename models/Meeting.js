@@ -51,6 +51,7 @@ const meetingSchema = new mongoose.Schema(
       default: null,
     },
      tagTo: [String],
+     actionTaken: { type: String, trim: true, default: null },
   }
 ],
 
