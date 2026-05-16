@@ -323,51 +323,103 @@ const createMeeting = async (req, res) => {
   }
 };
 
+// const updateMeeting = async (req, res) => {
+//   try {
+//     const {
+//       meetingNumber, meetingType, meetingDate, meetingTime, meetingAmpm,
+//       aiExtractedDecision,
+//       existingRecordingUrl,
+//     } = req.body;
+
+//     console.log("📥 req.body →", req.body);
+//     console.log("📁 req.files →", req.files);
+
+//     // subjects parse
+//     let subjects = [];
+//     try { subjects = JSON.parse(req.body.subjects || "[]"); } catch { subjects = []; }
+
+//     // ✅ agendaFiles — existing + new merge, max 12
+//     let existingAgendaFiles = [];
+//     try { existingAgendaFiles = JSON.parse(req.body.existingAgendaFiles || "[]"); } catch { existingAgendaFiles = []; }
+//     const newAgendaFiles = (req.files?.agendaFiles || []).map(f => f.path);
+//     const agendaFiles = [...existingAgendaFiles, ...newAgendaFiles].slice(0, 12);
+
+//     const updateData = {
+//       meetingNumber, meetingType,
+//       meetingDate:         meetingDate         || null,
+//       meetingTime:         meetingTime         || null,
+//       meetingAmpm:         meetingAmpm         || null,
+//       subjects:            subjects,
+//       agendaFiles:         agendaFiles,          // ✅ नवीन
+//       aiExtractedDecision: aiExtractedDecision  || null,
+//     };
+
+//     const manualFile = req.files?.meetingRecording?.[0];
+//     const blobFile   = req.files?.meetingRecordingBlob?.[0];
+
+//     if (manualFile) {
+//       updateData.meetingRecording = manualFile.path;
+//     } else if (blobFile) {
+//       updateData.meetingRecordingBlob = blobFile.path;
+//     } else if (existingRecordingUrl) {
+//       updateData.meetingRecording = existingRecordingUrl;
+//     }
+
+//     const meeting = await Meeting.findByIdAndUpdate(
+//       req.params.id,
+//       updateData,
+//       { new: true, runValidators: true }
+//     );
+
+//     if (!meeting)
+//       return res.status(404).json({ success: false, message: "Meeting not found" });
+
+//     res.json({ success: true, message: "Meeting updated successfully", data: meeting });
+//   } catch (err) {
+//     res.status(400).json({ success: false, message: err.message });
+//   }
+// };
+
+
 const updateMeeting = async (req, res) => {
   try {
-    const {
-      meetingNumber, meetingType, meetingDate, meetingTime, meetingAmpm,
-      aiExtractedDecision,
-      existingRecordingUrl,
-    } = req.body;
+    const updateData = {};
 
-    console.log("📥 req.body →", req.body);
-    console.log("📁 req.files →", req.files);
+    if (req.body.meetingNumber)   updateData.meetingNumber = req.body.meetingNumber;
+    if (req.body.meetingType)     updateData.meetingType   = req.body.meetingType;
+    
+    // Only update date/time if explicitly sent
+    if (req.body.meetingDate !== undefined) 
+      updateData.meetingDate = req.body.meetingDate || null;
+    if (req.body.meetingTime !== undefined) 
+      updateData.meetingTime = req.body.meetingTime || null;
 
-    // subjects parse
-    let subjects = [];
-    try { subjects = JSON.parse(req.body.subjects || "[]"); } catch { subjects = []; }
+    // subjects
+    if (req.body.subjects !== undefined) {
+      try { updateData.subjects = JSON.parse(req.body.subjects); } catch { updateData.subjects = []; }
+    }
 
-    // ✅ agendaFiles — existing + new merge, max 12
+    // agendaFiles merge
     let existingAgendaFiles = [];
-    try { existingAgendaFiles = JSON.parse(req.body.existingAgendaFiles || "[]"); } catch { existingAgendaFiles = []; }
+    try { existingAgendaFiles = JSON.parse(req.body.existingAgendaFiles || "[]"); } catch {}
     const newAgendaFiles = (req.files?.agendaFiles || []).map(f => f.path);
-    const agendaFiles = [...existingAgendaFiles, ...newAgendaFiles].slice(0, 12);
+    if (req.body.existingAgendaFiles !== undefined || newAgendaFiles.length > 0) {
+      updateData.agendaFiles = [...existingAgendaFiles, ...newAgendaFiles].slice(0, 12);
+    }
 
-    const updateData = {
-      meetingNumber, meetingType,
-      meetingDate:         meetingDate         || null,
-      meetingTime:         meetingTime         || null,
-      meetingAmpm:         meetingAmpm         || null,
-      subjects:            subjects,
-      agendaFiles:         agendaFiles,          // ✅ नवीन
-      aiExtractedDecision: aiExtractedDecision  || null,
-    };
+    if (req.body.aiExtractedDecision !== undefined)
+      updateData.aiExtractedDecision = req.body.aiExtractedDecision || null;
 
+    // recording logic (unchanged)
     const manualFile = req.files?.meetingRecording?.[0];
     const blobFile   = req.files?.meetingRecordingBlob?.[0];
-
-    if (manualFile) {
-      updateData.meetingRecording = manualFile.path;
-    } else if (blobFile) {
-      updateData.meetingRecordingBlob = blobFile.path;
-    } else if (existingRecordingUrl) {
-      updateData.meetingRecording = existingRecordingUrl;
-    }
+    if (manualFile)                    updateData.meetingRecording = manualFile.path;
+    else if (blobFile)                 updateData.meetingRecordingBlob = blobFile.path;
+    else if (req.body.existingRecordingUrl) updateData.meetingRecording = req.body.existingRecordingUrl;
 
     const meeting = await Meeting.findByIdAndUpdate(
       req.params.id,
-      updateData,
+      { $set: updateData },   // ← $set so only sent fields are touched
       { new: true, runValidators: true }
     );
 
@@ -379,6 +431,10 @@ const updateMeeting = async (req, res) => {
     res.status(400).json({ success: false, message: err.message });
   }
 };
+
+
+
+
 
 // @desc    Delete meeting by ID
 // @route   DELETE /api/deleteMeeting/:id
