@@ -257,8 +257,7 @@ const getNextMeetingId = async (req, res) => {
   try {
     const now    = new Date();
     const year   = now.getFullYear();
-    const month  = now.toLocaleString("en-US", { month: "short" }).toUpperCase();
-    const day    = String(now.getDate()).padStart(2, "0");
+    const mo     = String(now.getDate()).padStart(2, "0");
     const prefix = `MTG-${year}-${month}-${day}-`;
 
     // ✅ count नाही — existing max sequence शोधा

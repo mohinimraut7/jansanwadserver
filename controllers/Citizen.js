@@ -1604,47 +1604,6 @@ function slotsOverlap(start1, end1, start2, end2) {
   return toMin(start1) < toMin(end2) && toMin(end1) > toMin(start2);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ✅ REGISTER CITIZEN
-// ══════════════════════════════════════════════════════════════════════════════
-// exports.registerCitizen = async (req, res) => {
-//   try {
-//     let { fullName, mobileNumber, email, password } = req.body;
-
-//     fullName     = fullName?.trim();
-//     mobileNumber = mobileNumber?.trim();
-//     email        = email?.trim().toLowerCase() || "";
-
-//     if (!fullName || !mobileNumber || !password) {
-//       return res.status(400).json({ success: false, message: "सर्व fields required ❌" });
-//     }
-//     if (!/^\d{10}$/.test(mobileNumber)) {
-//       return res.status(400).json({ success: false, message: "Mobile number 10 digits असावा ❌" });
-//     }
-
-//     const existing = await Citizen.findOne({ mobileNumber });
-//     if (existing) {
-//       return res.status(409).json({ success: false, message: "हा mobile number already registered आहे ❌" });
-//     }
-
-//     const hashed  = await bcrypt.hash(password, 10);
-//     const citizen = await Citizen.create({ fullName, mobileNumber, email, password: hashed });
-
-//     return res.status(201).json({
-//       success: true,
-//       message: "Registration successful ✅",
-//       citizen: {
-//         _id:          citizen._id,
-//         fullName:     citizen.fullName,
-//         mobileNumber: citizen.mobileNumber,
-//         email:        citizen.email,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Citizen Register Error:", error);
-//     return res.status(500).json({ success: false, message: "Server Error ❌", error: error.message });
-//   }
-// };
 
 exports.registerCitizen = async (req, res) => {
   try {

@@ -16,3 +16,15 @@ WA_API_URL
 WA_API_TOKEN
 API_BASE_URL
 BACKEND_URL
+
+---------------------
+MKES malad school App
+
+admin,class teacher ,students
+admin principal-sagale class baghu shakatat 
+
+eavher homework takate,student queries resolve
+
+events 
+
+presenti
