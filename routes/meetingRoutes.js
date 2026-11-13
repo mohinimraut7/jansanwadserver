@@ -1,3 +1,35 @@
+// const express = require("express");
+// const router  = express.Router();
+
+// const {
+//   getAllMeetings,
+//   getMeetingById,
+//   extractDecisions,
+//   createMeeting,
+//   updateMeeting,
+//     getNextMeetingId,
+//   deleteMeeting,
+//   updateSubject,
+//   getSignedFileUrl
+
+// } = require("../controllers/meetingController");
+
+// const uploadMeetingRecording = require("../middlewares/Uploadmeetingrecording");
+
+// router.get("/getMeetings",        getAllMeetings);
+// router.get("/getMeeting/:id",     getMeetingById);
+// router.post("/extractDecisions", extractDecisions);
+// router.post("/getSignedFileUrl", getSignedFileUrl);
+// router.post("/createMeeting",     uploadMeetingRecording, createMeeting);
+// router.put("/updateMeeting/:id",  uploadMeetingRecording, updateMeeting);
+// router.delete("/deleteMeeting/:id", deleteMeeting);
+// router.get("/getNextMeetingId",        getNextMeetingId);
+// router.put("/updateMeeting/updateSubject/:subject_id",uploadMeetingRecording, updateSubject);
+
+
+// module.exports = router;
+
+
 const express = require("express");
 const router  = express.Router();
 
@@ -10,13 +42,16 @@ const {
     getNextMeetingId,
   deleteMeeting,
   updateSubject,
-  getSignedFileUrl
+  getSignedFileUrl,
+  getMeetingProgress
 
 } = require("../controllers/meetingController");
+const authMiddleware = require("../middlewares/auth");
 
 const uploadMeetingRecording = require("../middlewares/Uploadmeetingrecording");
 
 router.get("/getMeetings",        getAllMeetings);
+router.get("/meetingProgress",    authMiddleware, getMeetingProgress); // Dashboard — role-wise
 router.get("/getMeeting/:id",     getMeetingById);
 router.post("/extractDecisions", extractDecisions);
 router.post("/getSignedFileUrl", getSignedFileUrl);
@@ -28,6 +63,7 @@ router.put("/updateMeeting/updateSubject/:subject_id",uploadMeetingRecording, up
 
 
 module.exports = router;
+
 
 
 
