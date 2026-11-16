@@ -1,3 +1,64 @@
+// require("dotenv").config();
+// const dns = require("dns");
+// dns.setServers(["8.8.8.8", "8.8.4.4"]); // ✅ Fix SRV DNS issue
+
+// const express = require("express");
+// const app = express();
+// const mongoose = require("mongoose");
+// const path = require("path");
+// const cors = require("cors");
+
+// const addUserRoutes = require("./routes/user");
+// const revenueRoutes = require("./routes/revenue");
+// const InwardApplicationRoutes = require("./routes/InwardApplication");
+// const availabilityRoutes=require("./routes/Availability");
+// const citizenRoutes = require("./routes/Citizen");
+// const meetingRoutes = require("./routes/meetingRoutes");
+// // uploads folder serve करण्यासाठी:
+// app.use("/uploads", express.static("uploads"));
+
+// app.use(
+//   cors({
+//     origin: "*",
+//     methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
+//     credentials: true,
+//   })
+// );
+
+// app.use(express.json({ limit: "100mb" }));
+// app.use(express.urlencoded({ limit: "100mb", extended: true }));
+
+// app.use("/uploads/excel", express.static(path.join(process.cwd(), "uploads/excel")));
+
+
+// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// app.use("/images", express.static(path.join(__dirname, "public/images")));
+
+// const port = process.env.PORT || 5000;
+
+// mongoose
+//   .connect(process.env.MONGO_URI)
+//   .then(() => console.log("✅ MongoDB Atlas Jansanwad connected"))
+//   .catch((err) => console.log("❌ MongoDB connection error:", err));
+
+// app.use("/api", addUserRoutes);
+// app.use("/api", revenueRoutes);
+// app.use("/api", InwardApplicationRoutes);
+// app.use("/api",availabilityRoutes)
+// app.use("/api/citizen", citizenRoutes);
+// app.use("/api", meetingRoutes);
+
+
+// app.get("/", (req, res) => {
+//   res.send("Hello world....");
+// });
+// console.log("++++++++++",process.env.WA_API_URL,process.env.WA_API_TOKEN)
+// app.listen(port, () => {
+//   console.log(`Server running on port ${port}`);
+// });
+
+
+
 require("dotenv").config();
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]); // ✅ Fix SRV DNS issue
@@ -14,8 +75,20 @@ const InwardApplicationRoutes = require("./routes/InwardApplication");
 const availabilityRoutes=require("./routes/Availability");
 const citizenRoutes = require("./routes/Citizen");
 const meetingRoutes = require("./routes/meetingRoutes");
+
+// ⚡ gzip compression — API responses (JSON lists) 70-80% लहान होतात.
+// `npm install compression` केले नसेल तरी server आधीसारखाच चालेल.
+try {
+  app.use(require("compression")());
+} catch {
+  console.log("ℹ️ compression package नाही — `npm install compression` करा (optional)");
+}
+
+// ⚡ Uploaded files browser मध्ये 7 दिवस cache होतील (file नावे unique आहेत)
+const staticOpts = { maxAge: "7d" };
+
 // uploads folder serve करण्यासाठी:
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static("uploads", staticOpts));
 
 app.use(
   cors({
@@ -31,8 +104,8 @@ app.use(express.urlencoded({ limit: "100mb", extended: true }));
 app.use("/uploads/excel", express.static(path.join(process.cwd(), "uploads/excel")));
 
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/images", express.static(path.join(__dirname, "public/images")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads"), staticOpts));
+app.use("/images", express.static(path.join(__dirname, "public/images"), staticOpts));
 
 const port = process.env.PORT || 5000;
 
@@ -52,7 +125,8 @@ app.use("/api", meetingRoutes);
 app.get("/", (req, res) => {
   res.send("Hello world....");
 });
-console.log("++++++++++",process.env.WA_API_URL,process.env.WA_API_TOKEN)
+// 🔒 WhatsApp token console मध्ये print करणे बंद केले (security). Check करायचे असल्यास:
+console.log("WhatsApp API configured:", Boolean(process.env.WA_API_URL && process.env.WA_API_TOKEN));
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
